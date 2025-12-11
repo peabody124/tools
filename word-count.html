@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Count</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        textarea {
+            width: 100%;
+            height: 300px;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #0066cc;
+        }
+        .stats {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+        .stat-label {
+            color: #666;
+        }
+        .stat-value {
+            font-weight: bold;
+            color: #333;
+        }
+        .copy-btn {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .copy-btn:hover {
+            background: #0052a3;
+        }
+        .copy-btn:active {
+            background: #004080;
+        }
+    </style>
+</head>
+<body>
+    <h1>Word Count</h1>
+    <textarea id="input" placeholder="Paste or type your text here..."></textarea>
+    <div class="stats">
+        <div class="stat-row">
+            <span class="stat-label">Words</span>
+            <span class="stat-value" id="words">0</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Characters (with spaces)</span>
+            <span class="stat-value" id="chars">0</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Characters (no spaces)</span>
+            <span class="stat-value" id="chars-no-space">0</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Lines</span>
+            <span class="stat-value" id="lines">0</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Paragraphs</span>
+            <span class="stat-value" id="paragraphs">0</span>
+        </div>
+        <button class="copy-btn" onclick="copyStats()">Copy stats to clipboard</button>
+    </div>
+
+    <script>
+        const input = document.getElementById('input');
+        const wordsEl = document.getElementById('words');
+        const charsEl = document.getElementById('chars');
+        const charsNoSpaceEl = document.getElementById('chars-no-space');
+        const linesEl = document.getElementById('lines');
+        const paragraphsEl = document.getElementById('paragraphs');
+
+        function countWords(text) {
+            const trimmed = text.trim();
+            if (!trimmed) return 0;
+            return trimmed.split(/\s+/).length;
+        }
+
+        function countLines(text) {
+            if (!text) return 0;
+            return text.split('\n').length;
+        }
+
+        function countParagraphs(text) {
+            const trimmed = text.trim();
+            if (!trimmed) return 0;
+            return trimmed.split(/\n\s*\n/).filter(p => p.trim()).length;
+        }
+
+        function updateStats() {
+            const text = input.value;
+            wordsEl.textContent = countWords(text).toLocaleString();
+            charsEl.textContent = text.length.toLocaleString();
+            charsNoSpaceEl.textContent = text.replace(/\s/g, '').length.toLocaleString();
+            linesEl.textContent = countLines(text).toLocaleString();
+            paragraphsEl.textContent = countParagraphs(text).toLocaleString();
+        }
+
+        function copyStats() {
+            const stats = `Words: ${wordsEl.textContent}
+Characters (with spaces): ${charsEl.textContent}
+Characters (no spaces): ${charsNoSpaceEl.textContent}
+Lines: ${linesEl.textContent}
+Paragraphs: ${paragraphsEl.textContent}`;
+            navigator.clipboard.writeText(stats).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                const original = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = original, 1500);
+            });
+        }
+
+        input.addEventListener('input', updateStats);
+        updateStats();
+    </script>
+</body>
+</html>

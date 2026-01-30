@@ -275,6 +275,8 @@
             <code>Alice, Machine Learning, Robotics, Ethics</code><br>
             <code>Bob, Robotics, Machine Learning, Climate</code><br>
             Header row is auto-detected and optional.
+            <br><br>
+            <button class="btn btn-secondary" onclick="loadExample()">Load Example (40 people)</button>
         </div>
     </div>
 
@@ -661,6 +663,54 @@ function finishOptimization(numTables) {
 
     document.getElementById('resultsSection').classList.add('visible');
     document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ─── Example Data ───
+const EXAMPLE_CSV = `Name,Choice 1,Choice 2,Choice 3
+Alice Johnson,Machine Learning,Robotics,Climate Change
+Bob Smith,Robotics,Machine Learning,Renewable Energy
+Carol Davis,Climate Change,Ocean Conservation,Renewable Energy
+Dan Wilson,Renewable Energy,Climate Change,Space Exploration
+Eva Martinez,Space Exploration,Quantum Computing,Robotics
+Frank Brown,Quantum Computing,Machine Learning,Cybersecurity
+Grace Lee,Cybersecurity,Quantum Computing,Machine Learning
+Henry Taylor,Ocean Conservation,Climate Change,Renewable Energy
+Irene Chen,Machine Learning,Cybersecurity,Quantum Computing
+Jack Thompson,Robotics,Space Exploration,Machine Learning
+Karen White,Climate Change,Renewable Energy,Ocean Conservation
+Leo Garcia,Renewable Energy,Space Exploration,Robotics
+Maria Rodriguez,Space Exploration,Robotics,Quantum Computing
+Nathan Kim,Quantum Computing,Cybersecurity,Machine Learning
+Olivia Patel,Cybersecurity,Machine Learning,Quantum Computing
+Patrick O'Brien,Ocean Conservation,Climate Change,Renewable Energy
+Quinn Foster,Machine Learning,Quantum Computing,Cybersecurity
+Rachel Adams,Robotics,Machine Learning,Space Exploration
+Sam Turner,Climate Change,Ocean Conservation,Renewable Energy
+Tina Nguyen,Renewable Energy,Climate Change,Ocean Conservation
+Uma Sharma,Space Exploration,Quantum Computing,Robotics
+Victor Hayes,Quantum Computing,Space Exploration,Machine Learning
+Wendy Scott,Cybersecurity,Quantum Computing,Robotics
+Xavier Reyes,Ocean Conservation,Renewable Energy,Climate Change
+Yuki Tanaka,Machine Learning,Robotics,Cybersecurity
+Zara Ibrahim,Robotics,Space Exploration,Machine Learning
+Amy Cooper,Climate Change,Renewable Energy,Ocean Conservation
+Brian Murphy,Renewable Energy,Ocean Conservation,Climate Change
+Clara Diaz,Space Exploration,Machine Learning,Quantum Computing
+Derek Fisher,Quantum Computing,Cybersecurity,Space Exploration
+Elena Volkov,Cybersecurity,Machine Learning,Quantum Computing
+Finn O'Connor,Ocean Conservation,Climate Change,Cybersecurity
+Gina Rossi,Machine Learning,Cybersecurity,Robotics
+Hugo Larsson,Robotics,Machine Learning,Space Exploration
+Isla Campbell,Climate Change,Ocean Conservation,Renewable Energy
+Jasper Wright,Renewable Energy,Space Exploration,Quantum Computing
+Kayla Bennett,Space Exploration,Robotics,Machine Learning
+Liam Duffy,Quantum Computing,Machine Learning,Cybersecurity
+Mia Chang,Cybersecurity,Quantum Computing,Robotics
+Nolan Reed,Ocean Conservation,Renewable Energy,Climate Change`;
+
+function loadExample() {
+    document.getElementById('fileName').textContent = 'example-40-people.csv (built-in)';
+    parseCSV(EXAMPLE_CSV);
 }
 
 // ─── Download ───

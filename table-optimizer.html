@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Assignment Optimizer</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f0f2f5;
+            color: #1a1a2e;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+        h1 {
+            font-size: 28px;
+            margin-bottom: 6px;
+            color: #1a1a2e;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 15px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .card h2 {
+            font-size: 18px;
+            margin-bottom: 16px;
+            color: #333;
+        }
+        .upload-zone {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            position: relative;
+        }
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: #4a6cf7;
+            background: #f0f4ff;
+        }
+        .upload-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .upload-zone .icon {
+            font-size: 36px;
+            margin-bottom: 10px;
+            color: #999;
+        }
+        .upload-zone p {
+            color: #666;
+            font-size: 14px;
+        }
+        .upload-zone .filename {
+            margin-top: 10px;
+            font-weight: 600;
+            color: #4a6cf7;
+        }
+        .format-help {
+            margin-top: 14px;
+            padding: 14px;
+            background: #f8f9fb;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #555;
+            line-height: 1.6;
+        }
+        .format-help code {
+            background: #e8ecf1;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .settings-row {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .field label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+        }
+        .field input, .field select {
+            padding: 8px 12px;
+            border: 1px solid #d0d5dd;
+            border-radius: 6px;
+            font-size: 14px;
+            width: 160px;
+        }
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .btn-primary {
+            background: #4a6cf7;
+            color: #fff;
+        }
+        .btn-primary:hover { background: #3a5ce5; }
+        .btn-primary:disabled {
+            background: #a8b8f8;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background: #e8ecf1;
+            color: #333;
+        }
+        .btn-secondary:hover { background: #d8dde6; }
+        .preview-table-wrap {
+            overflow-x: auto;
+            margin-top: 12px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background: #f8f9fb;
+            font-weight: 600;
+            color: #555;
+            position: sticky;
+            top: 0;
+        }
+        tr:hover td { background: #fafbfd; }
+        .results-section { display: none; }
+        .results-section.visible { display: block; }
+        .table-assignment {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .table-assignment h3 {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+        .table-topic {
+            font-size: 13px;
+            color: #4a6cf7;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .person-chip {
+            display: inline-block;
+            padding: 5px 12px;
+            margin: 3px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .person-chip.match-1 { background: #d4edda; color: #155724; }
+        .person-chip.match-2 { background: #fff3cd; color: #856404; }
+        .person-chip.match-3 { background: #fde2c8; color: #7c4300; }
+        .person-chip.match-other { background: #e8ecf1; color: #555; }
+        .stats-bar {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #4a6cf7;
+        }
+        .stat .label {
+            font-size: 12px;
+            color: #888;
+            margin-top: 2px;
+        }
+        .legend {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 16px;
+        }
+        .legend span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .legend .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .progress-bar-wrap {
+            display: none;
+            margin-top: 12px;
+        }
+        .progress-bar-wrap.visible { display: block; }
+        .progress-bar-bg {
+            width: 100%;
+            height: 6px;
+            background: #e8ecf1;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: #4a6cf7;
+            border-radius: 3px;
+            transition: width 0.3s;
+            width: 0%;
+        }
+        .progress-text {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+        @media (max-width: 600px) {
+            .settings-row { flex-direction: column; }
+            .field input { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Table Assignment Optimizer</h1>
+    <p class="subtitle">Upload a spreadsheet of people and topic preferences, then optimize seating assignments.</p>
+
+    <!-- Upload Card -->
+    <div class="card">
+        <h2>1. Upload Spreadsheet</h2>
+        <div class="upload-zone" id="uploadZone">
+            <input type="file" id="fileInput" accept=".csv,.tsv,.txt">
+            <div class="icon">&#128196;</div>
+            <p>Drop a CSV file here or click to browse</p>
+            <div class="filename" id="fileName"></div>
+        </div>
+        <div class="format-help">
+            <strong>Expected CSV format:</strong> First column is the person's name. Remaining columns are their topic preferences in ranked order (most preferred first).<br>
+            Example:<br>
+            <code>Name, Choice 1, Choice 2, Choice 3</code><br>
+            <code>Alice, Machine Learning, Robotics, Ethics</code><br>
+            <code>Bob, Robotics, Machine Learning, Climate</code><br>
+            Header row is auto-detected and optional.
+            <br><br>
+            <button class="btn btn-secondary" onclick="loadExample()">Load Example (40 people)</button>
+        </div>
+    </div>
+
+    <!-- Preview Card -->
+    <div class="card" id="previewCard" style="display:none;">
+        <h2>2. Preview Data</h2>
+        <p style="font-size:13px;color:#888;margin-bottom:8px;" id="previewInfo"></p>
+        <div class="preview-table-wrap" style="max-height:260px;overflow-y:auto;">
+            <table id="previewTable"></table>
+        </div>
+    </div>
+
+    <!-- Settings Card -->
+    <div class="card" id="settingsCard" style="display:none;">
+        <h2>3. Configure &amp; Optimize</h2>
+        <div class="settings-row">
+            <div class="field">
+                <label for="numTables">Number of Tables</label>
+                <input type="number" id="numTables" min="1" value="5">
+            </div>
+            <div class="field">
+                <label for="maxPerTable">Max People per Table</label>
+                <input type="number" id="maxPerTable" min="1" value="8">
+            </div>
+            <div class="field">
+                <label for="iterations">Optimization Rounds</label>
+                <select id="iterations">
+                    <option value="1000">Quick (1k)</option>
+                    <option value="5000" selected>Standard (5k)</option>
+                    <option value="20000">Thorough (20k)</option>
+                    <option value="100000">Exhaustive (100k)</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" id="optimizeBtn" onclick="runOptimizer()">Optimize</button>
+        </div>
+        <div class="progress-bar-wrap" id="progressWrap">
+            <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+            <div class="progress-text" id="progressText">Starting...</div>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-section" id="resultsSection">
+        <div class="card">
+            <h2>Results</h2>
+            <div class="stats-bar" id="statsBar"></div>
+            <div class="legend">
+                <span><span class="dot" style="background:#d4edda"></span> 1st choice</span>
+                <span><span class="dot" style="background:#fff3cd"></span> 2nd choice</span>
+                <span><span class="dot" style="background:#fde2c8"></span> 3rd choice</span>
+                <span><span class="dot" style="background:#e8ecf1"></span> Lower / no match</span>
+            </div>
+            <button class="btn btn-secondary" onclick="downloadResults()" style="margin-bottom:16px;">Download CSV</button>
+        </div>
+        <div id="tablesContainer"></div>
+    </div>
+</div>
+
+<script>
+// ─── State ───
+let people = [];       // [{name, prefs: [topic1, topic2, ...]}]
+let allTopics = [];    // unique topics
+let bestAssignment = null;
+
+// ─── File Upload ───
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files.length) handleFile(fileInput.files[0]); });
+
+function handleFile(file) {
+    document.getElementById('fileName').textContent = file.name;
+    const reader = new FileReader();
+    reader.onload = e => parseCSV(e.target.result);
+    reader.readAsText(file);
+}
+
+function parseCSV(text) {
+    const sep = text.includes('\t') ? '\t' : ',';
+    const rows = text.trim().split(/\r?\n/).map(r => {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < r.length; i++) {
+            const ch = r[i];
+            if (ch === '"') { inQuotes = !inQuotes; }
+            else if (ch === sep && !inQuotes) { result.push(current.trim()); current = ''; }
+            else { current += ch; }
+        }
+        result.push(current.trim());
+        return result;
+    }).filter(r => r.some(c => c.length > 0));
+
+    if (rows.length < 2) { alert('Need at least 2 rows of data.'); return; }
+
+    // Detect header: if first row looks like labels
+    let dataRows = rows;
+    let headers = null;
+    const first = rows[0];
+    const looksLikeHeader = /^(name|person|student|attendee|participant)/i.test(first[0]);
+    if (looksLikeHeader) {
+        headers = first;
+        dataRows = rows.slice(1);
+    }
+
+    people = dataRows.map(r => ({
+        name: r[0],
+        prefs: r.slice(1).filter(c => c.length > 0)
+    })).filter(p => p.name);
+
+    const topicSet = new Set();
+    people.forEach(p => p.prefs.forEach(t => topicSet.add(t)));
+    allTopics = [...topicSet].sort();
+
+    showPreview(headers, dataRows);
+}
+
+function showPreview(headers, dataRows) {
+    const card = document.getElementById('previewCard');
+    card.style.display = '';
+    document.getElementById('previewInfo').textContent =
+        `${people.length} people, ${allTopics.length} unique topics, up to ${Math.max(...people.map(p => p.prefs.length))} preferences each.`;
+
+    const maxCols = Math.max(...dataRows.map(r => r.length));
+    let html = '<thead><tr>';
+    if (headers) {
+        headers.forEach(h => html += `<th>${esc(h)}</th>`);
+        for (let i = headers.length; i < maxCols; i++) html += `<th>Pref ${i}</th>`;
+    } else {
+        html += '<th>Name</th>';
+        for (let i = 1; i < maxCols; i++) html += `<th>Choice ${i}</th>`;
+    }
+    html += '</tr></thead><tbody>';
+    dataRows.slice(0, 50).forEach(r => {
+        html += '<tr>';
+        for (let i = 0; i < maxCols; i++) html += `<td>${esc(r[i] || '')}</td>`;
+        html += '</tr>';
+    });
+    if (dataRows.length > 50) html += `<tr><td colspan="${maxCols}" style="color:#888;text-align:center;">...and ${dataRows.length - 50} more</td></tr>`;
+    html += '</tbody>';
+    document.getElementById('previewTable').innerHTML = html;
+
+    const settingsCard = document.getElementById('settingsCard');
+    settingsCard.style.display = '';
+
+    // Smart defaults
+    const suggestedTables = Math.max(2, Math.min(allTopics.length, Math.ceil(people.length / 6)));
+    document.getElementById('numTables').value = suggestedTables;
+    document.getElementById('maxPerTable').value = Math.ceil(people.length / suggestedTables) + 2;
+}
+
+function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── Optimizer (Simulated Annealing) ───
+function runOptimizer() {
+    const numTables = parseInt(document.getElementById('numTables').value);
+    const maxPerTable = parseInt(document.getElementById('maxPerTable').value);
+    const totalIterations = parseInt(document.getElementById('iterations').value);
+
+    if (numTables * maxPerTable < people.length) {
+        alert(`Not enough capacity: ${numTables} tables x ${maxPerTable} seats = ${numTables * maxPerTable} spots for ${people.length} people. Increase tables or seats.`);
+        return;
+    }
+
+    document.getElementById('optimizeBtn').disabled = true;
+    const progressWrap = document.getElementById('progressWrap');
+    progressWrap.classList.add('visible');
+
+    // Run in chunks via setTimeout to keep UI responsive
+    const n = people.length;
+
+    // Assign a topic to each table, pick the most popular ones
+    const topicCounts = {};
+    people.forEach(p => p.prefs.forEach((t, i) => {
+        topicCounts[t] = (topicCounts[t] || 0) + (10 - Math.min(i, 9));
+    }));
+    const rankedTopics = Object.entries(topicCounts).sort((a, b) => b[1] - a[1]).map(e => e[0]);
+
+    // Each table gets a primary topic; if more tables than topics, some repeat
+    const tableTopics = [];
+    for (let i = 0; i < numTables; i++) {
+        tableTopics.push(rankedTopics[i % rankedTopics.length]);
+    }
+
+    // Score function: how happy is person p at table t?
+    function personTableScore(pIdx, tIdx) {
+        const prefs = people[pIdx].prefs;
+        const topic = tableTopics[tIdx];
+        const rank = prefs.indexOf(topic);
+        if (rank === -1) return 0;
+        return Math.max(0, (prefs.length - rank) * 10);  // higher = better
+    }
+
+    // Initial assignment: greedily assign each person to their best table
+    let assignment = new Array(n);
+    let tableCounts = new Array(numTables).fill(0);
+
+    // Sort people by fewest prefs first (most constrained first)
+    const order = [...Array(n).keys()].sort((a, b) => people[a].prefs.length - people[b].prefs.length);
+    for (const i of order) {
+        let bestT = 0, bestS = -1;
+        for (let t = 0; t < numTables; t++) {
+            if (tableCounts[t] >= maxPerTable) continue;
+            const s = personTableScore(i, t);
+            if (s > bestS) { bestS = s; bestT = t; }
+        }
+        assignment[i] = bestT;
+        tableCounts[bestT]++;
+    }
+
+    function totalScore(asgn) {
+        let s = 0;
+        for (let i = 0; i < n; i++) s += personTableScore(i, asgn[i]);
+        return s;
+    }
+
+    let currentScore = totalScore(assignment);
+    let bestScore = currentScore;
+    bestAssignment = { assignment: [...assignment], tableTopics: [...tableTopics], score: bestScore };
+
+    // Also try optimizing table topics themselves
+    let currentAssignment = [...assignment];
+    let currentTopics = [...tableTopics];
+
+    const CHUNK = 500;
+    let iter = 0;
+
+    function step() {
+        const end = Math.min(iter + CHUNK, totalIterations);
+        const temp0 = 50;
+
+        for (; iter < end; iter++) {
+            const temp = temp0 * (1 - iter / totalIterations);
+
+            // Decide move type: 70% swap people, 20% move person, 10% change table topic
+            const r = Math.random();
+            let newScore;
+
+            if (r < 0.7 && n > 1) {
+                // Swap two people
+                const a = Math.floor(Math.random() * n);
+                let b = Math.floor(Math.random() * (n - 1));
+                if (b >= a) b++;
+                if (currentAssignment[a] === currentAssignment[b]) continue;
+
+                const oldA = personTableScore(a, currentAssignment[a]) + personTableScore(b, currentAssignment[b]);
+                const newA = personTableScore(a, currentAssignment[b]) + personTableScore(b, currentAssignment[a]);
+                const delta = newA - oldA;
+
+                if (delta > 0 || Math.random() < Math.exp(delta / Math.max(temp, 0.1))) {
+                    const tmp = currentAssignment[a];
+                    currentAssignment[a] = currentAssignment[b];
+                    currentAssignment[b] = tmp;
+                    currentScore += delta;
+                }
+            } else if (r < 0.9) {
+                // Move one person to a different table
+                const p = Math.floor(Math.random() * n);
+                const oldT = currentAssignment[p];
+                let newT = Math.floor(Math.random() * (numTables - 1));
+                if (newT >= oldT) newT++;
+
+                // Check capacity
+                let cnt = 0;
+                for (let j = 0; j < n; j++) if (currentAssignment[j] === newT) cnt++;
+                if (cnt >= maxPerTable) continue;
+
+                const oldS = personTableScore(p, oldT);
+                const newS = personTableScore(p, newT);
+                const delta = newS - oldS;
+
+                if (delta > 0 || Math.random() < Math.exp(delta / Math.max(temp, 0.1))) {
+                    currentAssignment[p] = newT;
+                    currentScore += delta;
+                }
+            } else {
+                // Change a table's topic
+                const t = Math.floor(Math.random() * numTables);
+                const oldTopic = tableTopics[t];
+                const newTopic = allTopics[Math.floor(Math.random() * allTopics.length)];
+                if (newTopic === oldTopic) continue;
+
+                tableTopics[t] = newTopic;
+                const ns = totalScore(currentAssignment);
+                const delta = ns - currentScore;
+
+                if (delta > 0 || Math.random() < Math.exp(delta / Math.max(temp, 0.1))) {
+                    currentScore = ns;
+                } else {
+                    tableTopics[t] = oldTopic;
+                }
+            }
+
+            if (currentScore > bestScore) {
+                bestScore = currentScore;
+                bestAssignment = {
+                    assignment: [...currentAssignment],
+                    tableTopics: [...tableTopics],
+                    score: bestScore
+                };
+            }
+        }
+
+        // Update progress
+        const pct = Math.round(iter / totalIterations * 100);
+        document.getElementById('progressFill').style.width = pct + '%';
+        document.getElementById('progressText').textContent = `${pct}% — Score: ${bestScore}`;
+
+        if (iter < totalIterations) {
+            setTimeout(step, 0);
+        } else {
+            finishOptimization(numTables, maxPerTable);
+        }
+    }
+    setTimeout(step, 0);
+}
+
+function finishOptimization(numTables) {
+    document.getElementById('optimizeBtn').disabled = false;
+    document.getElementById('progressWrap').classList.remove('visible');
+
+    const { assignment, tableTopics, score } = bestAssignment;
+    const n = people.length;
+
+    // Build table groups
+    const tables = [];
+    for (let t = 0; t < numTables; t++) {
+        const members = [];
+        for (let i = 0; i < n; i++) {
+            if (assignment[i] === t) {
+                const rank = people[i].prefs.indexOf(tableTopics[t]);
+                members.push({ name: people[i].name, rank, prefs: people[i].prefs });
+            }
+        }
+        tables.push({ topic: tableTopics[t], members });
+    }
+
+    // Stats
+    let match1 = 0, match2 = 0, match3 = 0, matchOther = 0;
+    for (let i = 0; i < n; i++) {
+        const rank = people[i].prefs.indexOf(tableTopics[assignment[i]]);
+        if (rank === 0) match1++;
+        else if (rank === 1) match2++;
+        else if (rank === 2) match3++;
+        else matchOther++;
+    }
+
+    document.getElementById('statsBar').innerHTML = `
+        <div class="stat"><div class="value">${n}</div><div class="label">People</div></div>
+        <div class="stat"><div class="value">${numTables}</div><div class="label">Tables</div></div>
+        <div class="stat"><div class="value">${match1}</div><div class="label">1st Choice</div></div>
+        <div class="stat"><div class="value">${match2}</div><div class="label">2nd Choice</div></div>
+        <div class="stat"><div class="value">${match3}</div><div class="label">3rd Choice</div></div>
+        <div class="stat"><div class="value">${matchOther}</div><div class="label">Other</div></div>
+        <div class="stat"><div class="value">${Math.round((match1 + match2 + match3) / n * 100)}%</div><div class="label">Top-3 Match</div></div>
+    `;
+
+    const container = document.getElementById('tablesContainer');
+    container.innerHTML = '';
+    tables.filter(t => t.members.length > 0).sort((a, b) => b.members.length - a.members.length).forEach((t, idx) => {
+        const div = document.createElement('div');
+        div.className = 'table-assignment';
+        let chips = t.members.sort((a, b) => a.rank - b.rank).map(m => {
+            let cls = 'match-other';
+            let title = 'No match';
+            if (m.rank === 0) { cls = 'match-1'; title = '1st choice'; }
+            else if (m.rank === 1) { cls = 'match-2'; title = '2nd choice'; }
+            else if (m.rank === 2) { cls = 'match-3'; title = '3rd choice'; }
+            else if (m.rank > 0) { title = `Choice #${m.rank + 1}`; }
+            return `<span class="person-chip ${cls}" title="${title}">${esc(m.name)}</span>`;
+        }).join('');
+        div.innerHTML = `<h3>Table ${idx + 1}</h3><div class="table-topic">Topic: ${esc(t.topic)}</div>${chips}`;
+        container.appendChild(div);
+    });
+
+    document.getElementById('resultsSection').classList.add('visible');
+    document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ─── Example Data ───
+const EXAMPLE_CSV = `Name,Choice 1,Choice 2,Choice 3
+Alice Johnson,Machine Learning,Robotics,Climate Change
+Bob Smith,Robotics,Machine Learning,Renewable Energy
+Carol Davis,Climate Change,Ocean Conservation,Renewable Energy
+Dan Wilson,Renewable Energy,Climate Change,Space Exploration
+Eva Martinez,Space Exploration,Quantum Computing,Robotics
+Frank Brown,Quantum Computing,Machine Learning,Cybersecurity
+Grace Lee,Cybersecurity,Quantum Computing,Machine Learning
+Henry Taylor,Ocean Conservation,Climate Change,Renewable Energy
+Irene Chen,Machine Learning,Cybersecurity,Quantum Computing
+Jack Thompson,Robotics,Space Exploration,Machine Learning
+Karen White,Climate Change,Renewable Energy,Ocean Conservation
+Leo Garcia,Renewable Energy,Space Exploration,Robotics
+Maria Rodriguez,Space Exploration,Robotics,Quantum Computing
+Nathan Kim,Quantum Computing,Cybersecurity,Machine Learning
+Olivia Patel,Cybersecurity,Machine Learning,Quantum Computing
+Patrick O'Brien,Ocean Conservation,Climate Change,Renewable Energy
+Quinn Foster,Machine Learning,Quantum Computing,Cybersecurity
+Rachel Adams,Robotics,Machine Learning,Space Exploration
+Sam Turner,Climate Change,Ocean Conservation,Renewable Energy
+Tina Nguyen,Renewable Energy,Climate Change,Ocean Conservation
+Uma Sharma,Space Exploration,Quantum Computing,Robotics
+Victor Hayes,Quantum Computing,Space Exploration,Machine Learning
+Wendy Scott,Cybersecurity,Quantum Computing,Robotics
+Xavier Reyes,Ocean Conservation,Renewable Energy,Climate Change
+Yuki Tanaka,Machine Learning,Robotics,Cybersecurity
+Zara Ibrahim,Robotics,Space Exploration,Machine Learning
+Amy Cooper,Climate Change,Renewable Energy,Ocean Conservation
+Brian Murphy,Renewable Energy,Ocean Conservation,Climate Change
+Clara Diaz,Space Exploration,Machine Learning,Quantum Computing
+Derek Fisher,Quantum Computing,Cybersecurity,Space Exploration
+Elena Volkov,Cybersecurity,Machine Learning,Quantum Computing
+Finn O'Connor,Ocean Conservation,Climate Change,Cybersecurity
+Gina Rossi,Machine Learning,Cybersecurity,Robotics
+Hugo Larsson,Robotics,Machine Learning,Space Exploration
+Isla Campbell,Climate Change,Ocean Conservation,Renewable Energy
+Jasper Wright,Renewable Energy,Space Exploration,Quantum Computing
+Kayla Bennett,Space Exploration,Robotics,Machine Learning
+Liam Duffy,Quantum Computing,Machine Learning,Cybersecurity
+Mia Chang,Cybersecurity,Quantum Computing,Robotics
+Nolan Reed,Ocean Conservation,Renewable Energy,Climate Change`;
+
+function loadExample() {
+    document.getElementById('fileName').textContent = 'example-40-people.csv (built-in)';
+    parseCSV(EXAMPLE_CSV);
+}
+
+// ─── Download ───
+function downloadResults() {
+    if (!bestAssignment) return;
+    const { assignment, tableTopics } = bestAssignment;
+    let csv = 'Name,Table,Topic,Preference Rank\n';
+    for (let i = 0; i < people.length; i++) {
+        const t = assignment[i];
+        const topic = tableTopics[t];
+        const rank = people[i].prefs.indexOf(topic);
+        csv += `"${people[i].name}",${t + 1},"${topic}",${rank === -1 ? 'N/A' : rank + 1}\n`;
+    }
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'table-assignments.csv';
+    a.click();
+}
+</script>
+</body>
+</html>
